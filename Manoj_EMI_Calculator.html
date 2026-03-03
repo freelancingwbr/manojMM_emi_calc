@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Loan EMI Calculator</title>
+
+<style>
+body{
+    font-family: Arial, sans-serif;
+    background: linear-gradient(135deg,#1e3c72,#2a5298);
+    margin:0;
+    padding:20px;
+    display:flex;
+    justify-content:center;
+}
+
+.container{
+    background:white;
+    max-width:550px;
+    width:100%;
+    padding:25px;
+    border-radius:15px;
+    box-shadow:0 10px 25px rgba(0,0,0,0.25);
+}
+
+h2{
+    text-align:center;
+    margin-bottom:20px;
+}
+
+label{
+    font-weight:bold;
+    margin-top:15px;
+    display:block;
+}
+
+input{
+    width:100%;
+    padding:12px;
+    margin-top:6px;
+    border-radius:8px;
+    border:1px solid #ccc;
+    font-size:16px;
+    box-sizing:border-box;
+}
+
+button{
+    width:100%;
+    padding:12px;
+    margin-top:12px;
+    border:none;
+    border-radius:8px;
+    font-size:15px;
+    cursor:pointer;
+    font-weight:bold;
+}
+
+button:disabled{
+    background:#ccc !important;
+    cursor:not-allowed;
+    opacity:0.6;
+}
+
+.calculate-btn{ background:#2a5298; color:white; }
+.share-btn{ background:#25D366; color:white; }
+
+.result{
+    margin-top:20px;
+    background:#f4f6f9;
+    padding:15px;
+    border-radius:10px;
+}
+
+.schedule{
+    max-height:220px;
+    overflow:auto;
+    margin-top:10px;
+    font-size:14px;
+}
+</style>
+</head>
+
+<body>
+
+<div class="container">
+<h2>Loan EMI Calculator</h2>
+
+<label>Customer Name</label>
+<input type="text" id="customerName" placeholder="Enter customer name">
+
+<label>Customer Mobile (with country code)</label>
+<input type="text" id="customerMobile" placeholder="Example: 9198XXXXXXX">
+
+<label>Enter Loan Amount</label>
+<input type="number" id="amount" placeholder="Enter amount">
+
+<button class="calculate-btn" onclick="calculateLoan()">Generate EMI Schedule</button>
+
+<div class="result" id="result" style="display:none;"></div>
+
+<div id="actionButtons" style="display:none;">
+    <button id="shareCustomer" class="share-btn" onclick="shareToCustomer()" disabled>
+        Send EMI to Customer
+    </button>
+
+    <button id="shareOwner" class="share-btn" onclick="shareToOwner()" disabled>
+        Send EMI to Myself
+    </button>
+</div>
+
+</div>
+
+<script>
+
+let savedScheduleText = "";
+
+function getNextSunday() {
+    let today = new Date();
+    let day = today.getDay();
+    let diff = (7 - day) % 7;
+    if(diff === 0) diff = 7;
+    today.setDate(today.getDate() + diff);
+    return today;
+}
+
+function calculateLoan(){
+
+let name = document.getElementById("customerName").value.trim();
+let mobile = document.getElementById("customerMobile").value.trim();
+let amount = parseFloat(document.getElementById("amount").value);
+
+if(!name || !mobile || !amount){
+    alert("Please fill all details");
+    return;
+}
+
+let firstSunday = getNextSunday();
+
+let charges = amount * 0.04;
+let fileAmount = amount - charges;
+let weeklyEMI = Math.round(amount * 0.0815);
+let totalCollection = weeklyEMI * 14;
+
+let resultHTML = `
+<b>Customer:</b> ${name}<br>
+<b>Mobile:</b> ${mobile}<br><br>
+<b>Loan Amount:</b> ₹${amount}<br>
+<b>Charges (4%):</b> ₹${charges.toFixed(0)}<br>
+<b>Amount Given:</b> ₹${fileAmount.toFixed(0)}<br>
+<b>Weekly EMI:</b> ₹${weeklyEMI}<br>
+<b>First EMI Date (Sunday):</b> ${firstSunday.toDateString()}<br>
+
+<div class="schedule"><b>EMI Schedule (Every Sunday):</b><br>
+`;
+
+let scheduleText = `Dear ${name},
+
+Your Loan Details:
+
+Loan Amount: ₹${amount}
+Charges (4%): ₹${charges.toFixed(0)}
+Amount Given: ₹${fileAmount.toFixed(0)}
+Weekly EMI: ₹${weeklyEMI}
+
+EMI Schedule (Every Sunday):
+`;
+
+for(let i=0;i<14;i++){
+    let emiDate = new Date(firstSunday);
+    emiDate.setDate(firstSunday.getDate() + (7*i));
+
+    resultHTML += `Week ${i+1}: ${emiDate.toDateString()} - ₹${weeklyEMI}<br>`;
+    scheduleText += `Week ${i+1}: ${emiDate.toDateString()} - ₹${weeklyEMI}\n`;
+}
+
+resultHTML += `<br><b>Total Collection (14 Weeks): ₹${totalCollection}</b></div>`;
+
+scheduleText += `\nTotal Collection (14 Weeks): ₹${totalCollection}`;
+
+savedScheduleText = scheduleText;
+
+document.getElementById("result").innerHTML = resultHTML;
+document.getElementById("result").style.display = "block";
+
+document.getElementById("actionButtons").style.display = "block";
+document.getElementById("shareCustomer").disabled = false;
+document.getElementById("shareOwner").disabled = false;
+}
+
+function shareToCustomer(){
+let mobile = document.getElementById("customerMobile").value.trim();
+let url = "https://wa.me/" + mobile + "?text=" + encodeURIComponent(savedScheduleText);
+window.open(url,"_blank");
+}
+
+function shareToOwner(){
+let ownerNumber = "919096575857"; 
+let url = "https://wa.me/" + ownerNumber + "?text=" + encodeURIComponent(savedScheduleText);
+window.open(url,"_blank");
+}
+
+</script>
+
+</body>
+</html>
